@@ -1,0 +1,41 @@
+<label for="fname">Name:</label>
+<input type="text" id="fname" name="fname" #fname>
+<br>
+
+<div>
+  <label for="stoneCount">Choose stone count:</label>
+  <select name="stoneCount" id="stoneCount" #stoneCount>
+    <option value=4>4</option>
+    <option value=6>6</option>
+  </select>
+</div>
+<div>
+  <label for="boxCount">Choose boxCount:</label>
+  <select name="boxCount" id="boxCount" #boxCount>
+    <option value=4>4</option>
+    <option value=5>5</option>
+    <option value=6>6</option>
+    <option value=7>7</option>
+    <option value=8>8</option>
+  </select>
+</div>
+
+<div style="border: black;">
+  <br>
+  <button style="background-color: orange; color:darkblue; margin-right: 10px;" (click)="createGame(fname.value, privateGame.checked, stoneCount.value, boxCount.value)" type="submit">Create New Game</button>  
+  <label for="privateGame">Is private?</label>
+  <input type="checkbox" name="privateGame" #privateGame>
+</div>
+
+<div style="border: black;">
+  <br>
+  <button style="background-color: orange; color:darkblue;" (click)="joinRandomGame(fname.value)" type="submit">Join Random Game</button>
+</div>
+
+<div style="border: black;">
+  <br>
+  <button style="background-color: orange; color:darkblue; margin-right: 10px; " (click)="joinPrivateGame(gameId.value, fname.value)">Join Private Game</button>
+
+  <label for="gameId">Game Id:</label>
+  <input type="text" id="gameId" name="gameId" #gameId >
+</div>
