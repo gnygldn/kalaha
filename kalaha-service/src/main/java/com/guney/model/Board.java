@@ -1,6 +1,5 @@
 package com.guney.model;
 
-import com.guney.enums.BoardStatus;
 import lombok.Data;
 
 import java.util.ArrayList;

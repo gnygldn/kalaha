@@ -1,14 +1,9 @@
 package com.guney.service;
 
 import com.google.gson.Gson;
-import com.guney.enums.BoardStatus;
-import com.guney.enums.GameStatus;
 import com.guney.exception.InvalidGameException;
 import com.guney.exception.InvalidMoveException;
-import com.guney.model.Board;
-import com.guney.model.Bucket;
-import com.guney.model.Game;
-import com.guney.model.Player;
+import com.guney.model.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +49,7 @@ public class GameService {
     public Game connectToGame(String gameId, String name) throws InvalidGameException {
         Game game = openGames.get(gameId);
         if (game == null) {
-            log.debug("No open game is found with gameId " + gameId);
+            log.info("No open game is found with gameId " + gameId);
             throw new InvalidGameException("The game you are trying to join is no longer exists");
         }
         return startGame(game, playerService.createPlayer(name));
@@ -100,7 +95,7 @@ public class GameService {
         Game game = gamesInProgress.get(gameId);
 
         if (game == null) {
-            log.debug("An attempt is made for a game not exists with gameId " + gameId);
+            log.error("An attempt is made for a game not exists with gameId " + gameId);
             throw new InvalidGameException("No game available");
         }
 
@@ -138,26 +133,34 @@ public class GameService {
         List<Bucket> opponentBuckets = game.getOpponentBuckets(playerId);
         int stoneCount = ownerBuckets.get(bucketIndex).removeAllStones();
         if (stoneCount == 0) {
-            log.debug("Player with playerId " + playerId + " tried to play empty bucket");
+            log.debug("Player with playerId {} tried to play empty bucket", playerId);
             throw new InvalidMoveException("Bucket has no stones");
         }
 
         while (stoneCount > 0) {
 
+            // visits player's buckets starting from the next one of the selected bucket.
+            // bucket index is reset to -1 in the end of the while loop to start from 0
+            // if there are any stones left after visiting own and opponent's buckets
             for (int i = bucketIndex + 1; i < ownerBuckets.size() && stoneCount > 0; i++) {
                 int bucketStoneCount = ownerBuckets.get(i).addStone(1);
+
+                // This block helps checking if the last stone is dropped to own empty bucket and
+                // if the opposite box is not empty put this stone and the stones in the opposite bucket
+                // to the pool of the player who made the move
                 if (--stoneCount == 0) {
-                    if (bucketStoneCount == 1 && opponentBuckets.get(game.getBoard().getDefaultBoxCount() - 1 - i).getStoneCount() > 0) {
+                    Bucket oppositeBucket = opponentBuckets.get(game.getBoard().getDefaultBoxCount() - 1 - i);
+                    if (bucketStoneCount == 1 && oppositeBucket.getStoneCount() > 0) {
                         int stones = ownerBuckets.get(i).removeAllStones();
-                        stones += opponentBuckets.get(game.getBoard().getDefaultBoxCount() - 1 - i).removeAllStones();
+                        stones += oppositeBucket.removeAllStones();
                         game.getOwnerPool(playerId).addStone(stones);
                     }
                 }
             }
-            bucketIndex = -1;
 
             if (stoneCount > 0) {
                 game.getOwnerPool(playerId).addStone(1);
+                //if the last stone is dropped to the player's own pool, it is still that player's turn.
                 if (--stoneCount == 0) {
                     changeTurn = false;
                 }
@@ -165,6 +168,10 @@ public class GameService {
             for (int i = 0; i < opponentBuckets.size() && stoneCount > 0; i++, stoneCount--) {
                 opponentBuckets.get(i).addStone(1);
             }
+
+            // bucketIndex is set to -1 to start from the first bucket of the turn owner's buckets
+            // if any stone left after visiting opponent's buckets
+            bucketIndex = -1;
         }
 
         if (changeTurn) {
@@ -200,7 +207,7 @@ public class GameService {
         game.getBoard().setBoardStatus(boardStatus);
         game.setGameStatus(GameStatus.OVER);
         String message = boardStatus == BoardStatus.DRAW ? "Game is draw" : game.getWinner() + "is won";
-        log.info("Game with gameId " + game.getGameId() + " is over. " + message);
+        log.info("Game with gameId {} is over. {}", game.getGameId(), message);
         gamesInProgress.remove(game.getGameId());
     }
 
@@ -215,15 +222,17 @@ public class GameService {
         stoneCount += board.getPlayer1Buckets().stream().mapToInt(Bucket::getStoneCount).sum();
         board.setEndStateStonesByPlayer1StoneCount(stoneCount);
 
+        BoardStatus boardStatus;
         if (stoneCount == board.getDefaultStoneCount() * board.getDefaultBoxCount()) {
-            finishGame(game, BoardStatus.DRAW);
+            boardStatus = BoardStatus.DRAW;
         } else if (stoneCount > board.getDefaultStoneCount() * board.getDefaultBoxCount()) {
             game.setWinner(game.getPlayer1());
-            finishGame(game, BoardStatus.WIN);
+            boardStatus = BoardStatus.WIN;
         } else {
             game.setWinner(game.getPlayer2());
-            finishGame(game, BoardStatus.WIN);
+            boardStatus = BoardStatus.WIN;
         }
+        finishGame(game, boardStatus);
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.guney.enums;
+package com.guney.model;
 
 public enum BoardStatus {
     WIN,

@@ -16,8 +16,12 @@ public class Bucket {
         this.stoneCount = stoneCount;
     }
 
-    public int addStone(int i) {
-        stoneCount += i;
+    /**
+     * @param addedStoneCount amount of the stones to be added to bucket
+     * @return returns the stone count after addition
+     */
+    public int addStone(int addedStoneCount) {
+        stoneCount += addedStoneCount;
         return stoneCount;
     }
 

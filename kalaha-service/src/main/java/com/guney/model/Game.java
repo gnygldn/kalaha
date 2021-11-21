@@ -1,6 +1,5 @@
 package com.guney.model;
 
-import com.guney.enums.GameStatus;
 import lombok.Builder;
 import lombok.Data;
 
