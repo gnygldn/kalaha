@@ -11,12 +11,14 @@ import com.guney.model.Game;
 import com.guney.model.Player;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @Getter
 @RequiredArgsConstructor
@@ -39,6 +41,7 @@ public class GameService {
         Game game = Game.builder().board(new Board(stoneCount, boxCount)).player1(player1).gameId(UUID.randomUUID().toString())
                 .gameStatus(GameStatus.WAITING_OPPONENT).privateGame(privateGame).player1Turn(true).build();
         openGames.put(game.getGameId(), game);
+        log.info("Game created with gameId " + game.getGameId());
         return game;
     }
 
@@ -51,6 +54,7 @@ public class GameService {
     public Game connectToGame(String gameId, String name) throws InvalidGameException {
         Game game = openGames.get(gameId);
         if (game == null) {
+            log.debug("No open game is found with gameId " + gameId);
             throw new InvalidGameException("The game you are trying to join is no longer exists");
         }
         return startGame(game, playerService.createPlayer(name));
@@ -64,7 +68,9 @@ public class GameService {
     public Game connectToRandomGame(String name) throws InvalidGameException {
         Game game = openGames.values().stream().filter(e -> !e.isPrivateGame()).findFirst()
                 .orElseThrow(() -> new InvalidGameException("There is no games available right now. Please create one or try again in a few minutes"));
-        return startGame(game, playerService.createPlayer(name));
+        startGame(game, playerService.createPlayer(name));
+        log.info(game.getPlayer2().getPlayerId() + " is connected to the game " + game.getGameId());
+        return game;
     }
 
     /**
@@ -79,6 +85,7 @@ public class GameService {
         game.setPlayer2(player2);
         openGames.remove(game.getGameId());
         gamesInProgress.put(game.getGameId(), game);
+        log.info("Game with gameId " + game.getGameId() + " is started.");
         return game;
     }
 
@@ -92,13 +99,15 @@ public class GameService {
 
         Game game = gamesInProgress.get(gameId);
 
-        if(game == null) {
-            throw new InvalidGameException("There is no games available right now. Please create one or try again in a few minutes");
+        if (game == null) {
+            log.debug("An attempt is made for a game not exists with gameId " + gameId);
+            throw new InvalidGameException("No game available");
         }
 
         checkTurn(game, playerId);
 
         placeStones(game, playerId, bucketIndex);
+        log.debug(playerId + " played with bucket " + bucketIndex + " on game " + gameId);
 
         checkWinner(game);
 
@@ -110,10 +119,10 @@ public class GameService {
      *
      * @param game     game to be checked if correct player tried to make a move
      * @param playerId playerId of a player who tried to make a move
-     * @return if right player made a move
      */
     private void checkTurn(Game game, String playerId) throws InvalidMoveException {
-        if((game.getPlayer1().getPlayerId().equals(playerId) && !game.isPlayer1Turn()) || (game.getPlayer2().getPlayerId().equals(playerId) && game.isPlayer1Turn())) {
+        if ((game.getPlayer1().getPlayerId().equals(playerId) && !game.isPlayer1Turn()) || (game.getPlayer2().getPlayerId().equals(playerId) && game.isPlayer1Turn())) {
+            log.debug(playerId + " tried to play in opponent's turn on game " + game.getGameId());
             throw new InvalidMoveException("Opponent's turn");
         }
     }
@@ -128,7 +137,8 @@ public class GameService {
         List<Bucket> ownerBuckets = game.getOwnerBuckets(playerId);
         List<Bucket> opponentBuckets = game.getOpponentBuckets(playerId);
         int stoneCount = ownerBuckets.get(bucketIndex).removeAllStones();
-        if(stoneCount == 0) {
+        if (stoneCount == 0) {
+            log.debug("Player with playerId " + playerId + " tried to play empty bucket");
             throw new InvalidMoveException("Bucket has no stones");
         }
 
@@ -189,6 +199,8 @@ public class GameService {
     private void finishGame(Game game, BoardStatus boardStatus) {
         game.getBoard().setBoardStatus(boardStatus);
         game.setGameStatus(GameStatus.OVER);
+        String message = boardStatus == BoardStatus.DRAW ? "Game is draw" : game.getWinner() + "is won";
+        log.info("Game with gameId " + game.getGameId() + " is over. " + message);
         gamesInProgress.remove(game.getGameId());
     }
 

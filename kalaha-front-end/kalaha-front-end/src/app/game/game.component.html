@@ -1,5 +1,9 @@
 <div *ngIf="gm" style="text-align: center;">
-    <h1>{{gamePlaySocketService.gm.gameId}}</h1>
+    <div *ngIf="gm.privateGame">
+        <button class="bucket-style" (click)="copyGameIdToClipboard()" type="submit">
+            Copy gameId to clipboard
+        </button>
+    </div>
     <div *ngIf="gamePlaySocketService.gm.gameStatus === 'OVER'">
         <div class="winner-style">
             GAME OVER
@@ -8,7 +12,7 @@
             {{getWinner()}}
         </div>
     </div>
-    <div *ngIf=messageSocketService.message style="text-align: center;">{{messageSocketService.message}}</div> 
+    <div *ngIf=messageSocketService.message style="text-align: center;">{{messageSocketService.message}}</div>
     <h3 *ngIf="checkPlayer1(); else notShow">{{getPlayer2Name()}}</h3>
     <ng-template #notShow>
         <h3>{{gamePlaySocketService.gm.player1.name}}</h3>

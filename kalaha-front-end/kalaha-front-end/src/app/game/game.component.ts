@@ -66,6 +66,11 @@ export class GameComponent implements OnDestroy {
     }
   }
 
+  copyGameIdToClipboard() {
+    navigator.clipboard.writeText(this.gamePlaySocketService.gm.gameId);
+    window.alert("Game id copied");
+  }
+
   checkMoveAllowed(stoneCount): boolean {
     if (this.gamePlaySocketService.gm.winner) {
       if (this.gamePlaySocketService.gm.winner.playerId == this.playerId) {
