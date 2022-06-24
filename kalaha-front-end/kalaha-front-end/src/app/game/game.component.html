@@ -1,0 +1,88 @@
+<div *ngIf="gm" style="text-align: center;">
+    <div *ngIf="gm.privateGame">
+        <button class="bucket-style" (click)="copyGameIdToClipboard()" type="submit">
+            Copy gameId to clipboard
+        </button>
+    </div>
+    <div *ngIf="gamePlaySocketService.gm.gameStatus === 'OVER'">
+        <div class="winner-style">
+            GAME OVER
+        </div>
+        <div class="winner-style">
+            {{getWinner()}}
+        </div>
+    </div>
+    <div *ngIf=messageSocketService.message style="text-align: center;">{{messageSocketService.message}}</div>
+    <h3 *ngIf="checkPlayer1(); else notShow">{{getPlayer2Name()}}</h3>
+    <ng-template #notShow>
+        <h3>{{gamePlaySocketService.gm.player1.name}}</h3>
+    </ng-template>
+
+    <div>
+        <div class="outside-bucket" *ngIf="checkPlayer1(); else notShow2">
+            <div class="bucket-div-style">
+                <h4 class="bucket-style" *ngFor="let bucket of gamePlaySocketService.gm.board.player2Buckets.reverse()">
+                    {{bucket.stoneCount}}
+                </h4>
+            </div>
+        </div>
+        <ng-template #notShow2>
+            <div class="outside-bucket">
+                <div class="bucket-div-style">
+                    <h4 class="bucket-style"
+                        *ngFor="let bucket of gamePlaySocketService.gm.board.player1Buckets.reverse()">
+                        {{bucket.stoneCount}}
+                    </h4>
+                </div>
+            </div>
+        </ng-template>
+
+        <div class="bucket-div-style" *ngIf="checkPlayer1(); else notShow3">
+            <h2 class="bucket-style">
+                {{gamePlaySocketService.gm.board.player2Pool.stoneCount}}
+            </h2>
+            <h2 class="bucket-style">
+                {{gamePlaySocketService.gm.board.player1Pool.stoneCount}}
+            </h2>
+        </div>
+        <ng-template #notShow3>
+            <div class="bucket-div-style">
+                <h2 class="bucket-style">
+                    {{gamePlaySocketService.gm.board.player1Pool.stoneCount}}
+                </h2>
+                <h2 class="bucket-style">
+                    {{gamePlaySocketService.gm.board.player2Pool.stoneCount}}
+                </h2>
+            </div>
+        </ng-template>
+
+
+
+        <div class="outside-bucket" *ngIf="checkPlayer1(); else notShow4">
+            <div class="bucket-div-style">
+                <button class="bucket-style"
+                    *ngFor="let bucket of gamePlaySocketService.gm.board.player1Buckets, let idx = index"
+                    (click)="makeMove(idx, bucket.stoneCount)" type="submit">
+                    {{bucket.stoneCount}}
+                </button>
+            </div>
+        </div>
+        <ng-template #notShow4>
+            <div class="outside-bucket">
+                <div class="bucket-div-style">
+                    <button class="bucket-style"
+                        *ngFor="let bucket of gamePlaySocketService.gm.board.player2Buckets, let idx = index"
+                        (click)="makeMove(idx, bucket.stoneCount)" type="submit">
+                        {{bucket.stoneCount}}
+                    </button>
+                </div>
+            </div>
+        </ng-template>
+    </div>
+
+    <h3 *ngIf="checkPlayer1(); else notShow5">{{gamePlaySocketService.gm.player1.name}}</h3>
+    <ng-template #notShow5>
+        <h3>{{getPlayer2Name()}}</h3>
+    </ng-template>
+
+</div>
